@@ -1,4 +1,4 @@
-import { getInfoAsync, makeDirectoryAsync, deleteAsync } from 'expo-file-system';
+import { getInfoAsync, makeDirectoryAsync, deleteAsync } from 'expo-file-system/legacy';
 import { EncryptionService } from './encryptionService';
 import { dbService } from '../database/db';
 import { DOCUMENTS_DIR } from '../utils/constants';

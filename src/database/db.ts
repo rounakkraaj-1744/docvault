@@ -7,8 +7,10 @@ class Database {
   private _initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
   async getDB(): Promise<SQLite.SQLiteDatabase> {
-    if (this._db) return this._db;
-    if (this._initPromise) return this._initPromise;
+    if (this._db)
+      return this._db;
+    if (this._initPromise)
+      return this._initPromise;
 
     this._initPromise = (async () => {
       const db = await SQLite.openDatabaseAsync(DATABASE_NAME);

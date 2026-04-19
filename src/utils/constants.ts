@@ -1,4 +1,4 @@
-import { documentDirectory } from 'expo-file-system';
+import { readAsStringAsync, writeAsStringAsync, getInfoAsync, deleteAsync, cacheDirectory, EncodingType, documentDirectory } from 'expo-file-system/legacy';
 
 export const DATABASE_NAME = 'DocVault.db';
 export const ENCRYPTION_KEY_ALIAS = 'docvault_encryption_key';

@@ -1,14 +1,13 @@
 import * as CryptoJS from 'crypto-js';
 import * as SecureStore from 'expo-secure-store';
-import { readAsStringAsync, writeAsStringAsync, getInfoAsync, deleteAsync, cacheDirectory, EncodingType } from 'expo-file-system';
+import { readAsStringAsync, writeAsStringAsync, getInfoAsync, deleteAsync, cacheDirectory, EncodingType } from 'expo-file-system/legacy';
 import { ENCRYPTION_KEY_ALIAS } from '../utils/constants';
 
 export class EncryptionService {
   private static key: string | null = null;
 
   private static async getOrCreateKey(): Promise<string> {
-    if (this.key) 
-      return this.key;
+    if (this.key) return this.key;
     try {
       let storedKey = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
       if (storedKey) {
@@ -21,8 +20,7 @@ export class EncryptionService {
       });
       this.key = newKey;
       return newKey;
-    }
-    catch (e) {
+    } catch (e) {
       console.error('SecureStore Error:', e);
       throw new Error('Could not access secure encryption key');
     }
@@ -38,8 +36,7 @@ export class EncryptionService {
       await writeAsStringAsync(targetPath, encrypted, {
         encoding: EncodingType.UTF8,
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Encryption failed:', error);
       throw error;
     }
@@ -53,16 +50,14 @@ export class EncryptionService {
       });
       const bytes = CryptoJS.AES.decrypt(encryptedData, key);
       const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
-      if (!decryptedData)
-        throw new Error('Decryption resulted in empty data');
-
+      if (!decryptedData) throw new Error('Decryption resulted in empty data');
+      
       const tempPath = cacheDirectory + `${Date.now()}_temp`;
       await writeAsStringAsync(tempPath, decryptedData, {
         encoding: EncodingType.Base64,
       });
       return tempPath;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Decryption failed:', error);
       throw error;
     }
