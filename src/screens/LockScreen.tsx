@@ -1,7 +1,7 @@
-import { useNavigation } from '@react-navigation/native';
-import { Fingerprint, Lock } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Fingerprint, Lock, ShieldCheck } from 'lucide-react-native';
 import { useTheme } from '../hooks/useTheme';
 import { AuthService } from '../services/authService';
 import { useAppStore, useAuthStore } from '../store';
@@ -11,8 +11,9 @@ const LockScreen = () => {
   const theme = useTheme();
   const { hasPin, setLocked } = useAuthStore();
   const biometricsEnabled = useAppStore((state) => state.biometricsEnabled);
+  
   const [pin, setPin] = useState('');
-  const [isSettingPin, setIsSettingPin] = useState(!hasPin);
+  const [isSettingPin, setIsSettingPin] = useState(!!(hasPin === false));
 
   useEffect(() => {
     if (hasPin && biometricsEnabled) {
@@ -53,95 +54,77 @@ const LockScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Lock size={48} color={theme.primary} />
-        <Text style={[styles.title, { color: theme.text }]}>
-          {isSettingPin ? 'Set Your PIN' : 'Enter PIN to Unlock'}
-        </Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={[styles.pinInput, { color: theme.text, borderColor: theme.border }]}
-          value={pin}
-          onChangeText={setPin}
-          keyboardType="numeric"
-          secureTextEntry
-          maxLength={6}
-          placeholder="----"
-          placeholderTextColor={theme.textSecondary}
-          autoFocus
-        />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: theme.primary }]}
-        onPress={handlePinSubmit}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.content}
       >
-        <Text style={styles.buttonText}>{isSettingPin ? 'Create PIN' : 'Unlock'}</Text>
-      </TouchableOpacity>
-
-      {hasPin && biometricsEnabled && (
-        <TouchableOpacity style={styles.biometricBtn} onPress={handleBiometric}>
-          <Fingerprint size={40} color={theme.primary} />
-          <Text style={[styles.biometricText, { color: theme.textSecondary }]}>
-            Use Biometrics
+        <View style={styles.header}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
+            <Lock size={40} color={theme.primary} />
+          </View>
+          <Text style={[styles.title, { color: theme.text }]}>
+            {isSettingPin ? 'Create Secure PIN' : 'Welcome Back'}
           </Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            {isSettingPin ? 'Set a 4-6 digit PIN to protect your vault' : 'Enter your PIN to access your documents'}
+          </Text>
+        </View>
+
+        <View style={styles.inputSection}>
+          <TextInput
+            style={[styles.pinInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.surface }]}
+            value={pin}
+            onChangeText={setPin}
+            keyboardType="numeric"
+            secureTextEntry={true}
+            maxLength={6}
+            placeholder="······"
+            placeholderTextColor={theme.textSecondary}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: theme.primary }, pin.length < 4 && { opacity: 0.5 }]}
+          onPress={handlePinSubmit}
+          disabled={pin.length < 4}
+        >
+          <Text style={styles.buttonText}>{isSettingPin ? 'Setup Vault' : 'Unlock Vault'}</Text>
         </TouchableOpacity>
-      )}
-    </View>
+
+        {!isSettingPin && biometricsEnabled && (
+          <TouchableOpacity style={styles.biometricBtn} onPress={handleBiometric}>
+            <Fingerprint size={48} color={theme.primary} />
+            <Text style={[styles.biometricText, { color: theme.primary }]}>
+              Unlock with Biometrics
+            </Text>
+          </TouchableOpacity>
+        )}
+        
+        <View style={styles.footer}>
+          <ShieldCheck size={16} color={theme.success} />
+          <Text style={[styles.footerText, { color: theme.textSecondary }]}>End-to-End Encrypted</Text>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 50,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 30,
-  },
-  pinInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 15,
-    fontSize: 24,
-    textAlign: 'center',
-    letterSpacing: 10,
-  },
-  button: {
-    width: '100%',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  biometricBtn: {
-    marginTop: 40,
-    alignItems: 'center',
-  },
-  biometricText: {
-    marginTop: 10,
-    fontSize: 14,
-  },
+  container: { flex: 1 },
+  content: { flex: 1, padding: 32, justifyContent: 'center' },
+  header: { alignItems: 'center', marginBottom: 48 },
+  iconContainer: { width: 80, height: 80, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+  title: { fontSize: 28, fontWeight: '800', textAlign: 'center', marginBottom: 12 },
+  subtitle: { fontSize: 16, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
+  inputSection: { marginBottom: 32 },
+  pinInput: { height: 70, borderWidth: 1.5, borderRadius: 16, fontSize: 32, textAlign: 'center', letterSpacing: 12, fontWeight: '700' },
+  button: { height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+  buttonText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  biometricBtn: { alignItems: 'center', marginTop: 20 },
+  biometricText: { marginTop: 12, fontSize: 14, fontWeight: '700' },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 'auto', paddingTop: 20 },
+  footerText: { marginLeft: 8, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
 });
 
 export default LockScreen;

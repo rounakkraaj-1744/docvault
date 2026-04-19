@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
 import { dbService } from '../database/db';
 import { useDocumentStore } from '../store';
 import { DOCUMENT_CATEGORIES } from '../utils/constants';
 import { DocumentRecord } from '../utils/types';
-import { Plus, Search, FileText, Settings as SettingsIcon } from 'lucide-react-native';
+import { VaultCard } from '../components/VaultCard';
+import { CategoryChip } from '../components/CategoryChip';
+import { Plus, Search, Settings as SettingsIcon } from 'lucide-react-native';
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
@@ -21,33 +23,25 @@ const HomeScreen = () => {
 
   const loadDocuments = async () => {
     setLoading(true);
-    let docs: DocumentRecord[];
-    if (searchQuery) {
-      docs = await dbService.searchDocuments(searchQuery);
-    }
-    else {
-      docs = await dbService.getAllDocuments();
-    }
+    try {
+      let docs: DocumentRecord[];
+      if (searchQuery) {
+        docs = await dbService.searchDocuments(searchQuery);
+      } else {
+        docs = await dbService.getAllDocuments();
+      }
 
-    if (selectedCategory) {
-      docs = docs.filter(d => d.category === selectedCategory);
-    }
+      if (selectedCategory) {
+        docs = docs.filter(d => d.category === selectedCategory);
+      }
 
-    setDocuments(docs);
-    setLoading(false);
+      setDocuments(docs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const renderDocument = ({ item }: { item: DocumentRecord }) => (
-    <TouchableOpacity style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.textSecondary }]} onPress={() => navigation.navigate('Viewer', { document: item })}>
-      <View style={[styles.iconContainer, { backgroundColor: theme.primary + '10' }]}>
-        <FileText color={theme.primary} size={28} />
-      </View>
-      <View style={styles.cardInfo}>
-        <Text style={[styles.docName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.docCategory, { color: theme.textSecondary }]}>{item.category}</Text>
-      </View>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -78,37 +72,40 @@ const HomeScreen = () => {
           showsHorizontalScrollIndicator={false}
           data={['All', ...DOCUMENT_CATEGORIES]}
           keyExtractor={(item) => item}
+          contentContainerStyle={{ paddingHorizontal: 14 }}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.categoryTab,
-                selectedCategory === (item === 'All' ? null : item) && { backgroundColor: theme.primary }
-              ]}
+            <CategoryChip
+              label={item}
+              selected={item === 'All' ? selectedCategory === null : selectedCategory === item}
               onPress={() => setSelectedCategory(item === 'All' ? null : item)}
-            >
-              <Text style={[
-                styles.categoryText,
-                { color: selectedCategory === (item === 'All' ? null : item) ? '#FFF' : theme.textSecondary }
-              ]}>
-                {item}
-              </Text>
-            </TouchableOpacity>
+            />
           )}
         />
       </View>
 
-      <FlatList
-        data={documents}
-        keyExtractor={(item) => item.id?.toString() || ''}
-        renderItem={renderDocument}
-        numColumns={2}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={{ color: theme.textSecondary }}>No documents found</Text>
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={documents}
+          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+          renderItem={({ item }) => (
+            <VaultCard
+              document={item}
+              onPress={() => navigation.navigate('Viewer', { document: item })}
+            />
+          )}
+          numColumns={2}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={{ color: theme.textSecondary }}>No documents found</Text>
+            </View>
+          }
+        />
+      )}
 
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.primary }]}
@@ -121,104 +118,17 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  greeting: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  searchContainer: {
-    margin: 20,
-    marginTop: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    borderRadius: 12,
-    height: 50,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-  },
-  categoriesContainer: {
-    marginBottom: 10,
-  },
-  categoryTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 8,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listContent: {
-    padding: 10,
-  },
-  card: {
-    flex: 1,
-    margin: 10,
-    borderRadius: 16,
-    padding: 15,
-    minHeight: 140,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  docName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  docCategory: {
-    fontSize: 12,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 100,
-  },
-  fab: {
-    position: 'absolute',
-    right: 25,
-    bottom: 40,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
+  container: { flex: 1 },
+  header: { padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  greeting: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  title: { fontSize: 32, fontWeight: '800', marginTop: 4 },
+  searchContainer: { marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, borderRadius: 16, height: 56 },
+  searchInput: { flex: 1, marginLeft: 12, fontSize: 16, fontWeight: '500' },
+  categoriesContainer: { marginBottom: 16 },
+  listContent: { paddingHorizontal: 12, paddingBottom: 100 },
+  loader: { flex: 1, justifyContent: 'center' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
+  fab: { position: 'absolute', right: 24, bottom: 32, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
 });
 
 export default HomeScreen;

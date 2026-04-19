@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, SafeAreaView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../hooks/useTheme';
 import { StorageService } from '../services/storageService';
 import { DOCUMENT_CATEGORIES } from '../utils/constants';
-import { FileUp, Camera, Image as ImageIcon, ChevronLeft, Check } from 'lucide-react-native';
+import { VaultInput } from '../components/VaultInput';
+import { ActionButton } from '../components/ActionButton';
+import { CategoryChip } from '../components/CategoryChip';
+import { FileUp, Camera, Image as ImageIcon, ChevronLeft, CheckCircle2 } from 'lucide-react-native';
 
 const UploadScreen = () => {
   const navigation = useNavigation<any>();
   const theme = useTheme();
   
   const [docName, setDocName] = useState('');
-  const [category, setCategory] = useState(DOCUMENT_CATEGORIES[10]); // Default to 'Other'
+  const [category, setCategory] = useState(DOCUMENT_CATEGORIES[10]);
   const [tempFile, setTempFile] = useState<{ uri: string, type: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -37,7 +40,7 @@ const UploadScreen = () => {
   const handleCapture = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Camera access is required to take photos');
+      Alert.alert('Permission Required', 'DocVault needs camera access to scan physical documents.');
       return;
     }
 
@@ -64,7 +67,7 @@ const UploadScreen = () => {
 
   const handleSave = async () => {
     if (!docName || !tempFile) {
-      Alert.alert('Error', 'Please provide a name and select a file');
+      Alert.alert('Missing Information', 'Please provide a file name and select a document.');
       return;
     }
 
@@ -76,10 +79,10 @@ const UploadScreen = () => {
         category,
         tempFile.type
       );
-      Alert.alert('Success', 'Document saved securely');
+      Alert.alert('Vault Secured', 'Your document has been encrypted and stored safely.');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save document');
+      Alert.alert('Storage Error', 'Vault encryption failed. Ensure you have enough storage space.');
     } finally {
       setIsUploading(false);
     }
@@ -88,97 +91,67 @@ const UploadScreen = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={theme.text} size={28} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Add Document</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Add to Vault</Text>
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.section}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Document Name</Text>
-          <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.surface }]}
-            placeholder="e.g. My PAN Card"
-            placeholderTextColor={theme.textSecondary}
-            value={docName}
-            onChangeText={setDocName}
-          />
-        </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <VaultInput
+          label="Document Label"
+          placeholder="e.g. Health Insurance 2024"
+          value={docName}
+          onChangeText={setDocName}
+        />
 
         <View style={styles.section}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Source</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Import Source</Text>
           <View style={styles.sourceRow}>
-            <TouchableOpacity 
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
-              onPress={handlePickDocument}
-            >
-              <FileUp color={theme.primary} size={24} />
-              <Text style={[styles.sourceText, { color: theme.text }]}>File</Text>
+            <TouchableOpacity style={[styles.sourceBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={handlePickDocument}>
+              <FileUp color={theme.primary} size={26} />
+              <Text style={[styles.sourceText, { color: theme.text }]}>Files</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
-              onPress={handleCapture}
-            >
-              <Camera color={theme.primary} size={24} />
-              <Text style={[styles.sourceText, { color: theme.text }]}>Camera</Text>
+            <TouchableOpacity style={[styles.sourceBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={handleCapture}>
+              <Camera color={theme.primary} size={26} />
+              <Text style={[styles.sourceText, { color: theme.text }]}>Scan</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
-              onPress={handleImageLibrary}
-            >
-              <ImageIcon color={theme.primary} size={24} />
-              <Text style={[styles.sourceText, { color: theme.text }]}>Gallery</Text>
+            <TouchableOpacity style={[styles.sourceBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={handleImageLibrary}>
+              <ImageIcon color={theme.primary} size={26} />
+              <Text style={[styles.sourceText, { color: theme.text }]}>Photos</Text>
             </TouchableOpacity>
           </View>
-          {tempFile && (
-            <View style={[styles.fileStatus, { backgroundColor: theme.success + '20' }]}>
-              <Check color={theme.success} size={16} />
-              <Text style={[styles.fileStatusText, { color: theme.success }]}>File Selected</Text>
+          {!!tempFile && (
+            <View style={[styles.fileIndicator, { backgroundColor: theme.success + '15' }]}>
+              <CheckCircle2 color={theme.success} size={20} />
+              <Text style={[styles.fileIndicatorText, { color: theme.success }]}>Document Loaded & Ready</Text>
             </View>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Category</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Select Category</Text>
           <View style={styles.categoryGrid}>
             {DOCUMENT_CATEGORIES.map((cat) => (
-              <TouchableOpacity
+              <CategoryChip
                 key={cat}
-                style={[
-                  styles.categoryItem,
-                  { borderColor: theme.border, backgroundColor: theme.surface },
-                  category === cat && { borderColor: theme.primary, backgroundColor: theme.primary + '10' }
-                ]}
+                label={cat}
+                selected={category === cat}
                 onPress={() => setCategory(cat)}
-              >
-                <Text style={[
-                  styles.categoryIconText,
-                  { color: category === cat ? theme.primary : theme.text }
-                ]}>
-                  {cat}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[
-            styles.saveBtn, 
-            { backgroundColor: theme.primary },
-            (!docName || !tempFile || isUploading) && { opacity: 0.5 }
-          ]}
-          disabled={!docName || !tempFile || isUploading}
+        <ActionButton
+          label="Encrypt & Store Safely"
           onPress={handleSave}
-        >
-          <Text style={styles.saveBtnText}>
-            {isUploading ? 'Securing...' : 'Save to Vault'}
-          </Text>
-        </TouchableOpacity>
+          loading={isUploading}
+          disabled={!docName || !tempFile}
+        />
       </View>
     </SafeAreaView>
   );
@@ -187,22 +160,18 @@ const UploadScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
-  title: { fontSize: 20, fontWeight: '700' },
-  content: { padding: 20 },
-  section: { marginBottom: 25 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { height: 55, borderWidth: 1, borderRadius: 12, paddingHorizontal: 15, fontSize: 16 },
+  backBtn: { padding: 4 },
+  title: { fontSize: 22, fontWeight: '800' },
+  content: { padding: 22 },
+  section: { marginBottom: 30 },
+  label: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginLeft: 4 },
   sourceRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  sourceBtn: { flex: 1, marginHorizontal: 5, height: 80, borderRadius: 12, justifyContent: 'center', alignItems: 'center', elevation: 1 },
-  sourceText: { marginTop: 8, fontSize: 12, fontWeight: '600' },
-  fileStatus: { flexDirection: 'row', alignItems: 'center', marginTop: 15, padding: 10, borderRadius: 8, justifyContent: 'center' },
-  fileStatusText: { marginLeft: 8, fontSize: 14, fontWeight: '600' },
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
-  categoryItem: { width: '47%', margin: '1.5%', padding: 12, borderRadius: 10, borderWidth: 1, alignItems: 'flex-start' },
-  categoryIconText: { fontSize: 13, fontWeight: '500' },
-  footer: { padding: 20 },
-  saveBtn: { height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  saveBtnText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  sourceBtn: { flex: 1, marginHorizontal: 6, height: 90, borderRadius: 18, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  sourceText: { marginTop: 10, fontSize: 13, fontWeight: '700' },
+  fileIndicator: { flexDirection: 'row', alignItems: 'center', marginTop: 16, padding: 14, borderRadius: 14, justifyContent: 'center' },
+  fileIndicatorText: { marginLeft: 10, fontSize: 14, fontWeight: '700' },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
+  footer: { padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 },
 });
 
 export default UploadScreen;
