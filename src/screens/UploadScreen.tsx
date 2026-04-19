@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../hooks/useTheme';
 import { StorageService } from '../services/storageService';
-import { DOCUMENT_CATEGORIES } from '../constants/categories';
+import { DOCUMENT_CATEGORIES } from '../utils/constants';
 import { FileUp, Camera, Image as ImageIcon, ChevronLeft, Check } from 'lucide-react-native';
 
 const UploadScreen = () => {

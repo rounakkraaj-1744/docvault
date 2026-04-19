@@ -5,8 +5,8 @@ import * as Sharing from 'expo-sharing';
 import { useTheme } from '../hooks/useTheme';
 import { StorageService } from '../services/storageService';
 import { EncryptionService } from '../services/encryptionService';
-import { DocumentRecord } from '../database/db';
 import { Trash2, Share2, ChevronLeft } from 'lucide-react-native';
+import { DocumentRecord } from 'utils/types';
 
 const ViewerScreen = () => {
   const route = useRoute<any>();

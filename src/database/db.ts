@@ -1,16 +1,6 @@
 import * as SQLite from 'expo-sqlite';
-
-const DATABASE_NAME = 'DocVault.db';
-
-export interface DocumentRecord {
-  id?: number;
-  name: string;
-  category: string;
-  file_path: string;
-  file_type: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { DATABASE_NAME } from '../utils/constants';
+import { DocumentRecord } from '../utils/types';
 
 class Database {
   private _db: SQLite.SQLiteDatabase | null = null;

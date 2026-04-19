@@ -1,7 +1,6 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-
-const PIN_KEY = 'docvault_pin';
+import { PIN_KEY } from '../utils/constants';
 
 export class AuthService {
   static async checkHasPin(): Promise<boolean> {

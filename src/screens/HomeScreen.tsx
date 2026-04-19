@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
-import { dbService, DocumentRecord } from '../database/db';
+import { dbService } from '../database/db';
 import { useDocumentStore } from '../store';
-import { DOCUMENT_CATEGORIES } from '../constants/categories';
-import { Plus, Search, FileText, Settings as SettingsIcon, Filter } from 'lucide-react-native';
+import { DOCUMENT_CATEGORIES } from '../utils/constants';
+import { DocumentRecord } from '../utils/types';
+import { Plus, Search, FileText, Settings as SettingsIcon } from 'lucide-react-native';
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
