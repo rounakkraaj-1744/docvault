@@ -1,14 +1,14 @@
-import * as FileSystem from 'expo-file-system';
-import { EncryptionService } from './encryptionService';
+import RNFS from 'react-native-fs';
 import { dbService, DocumentRecord } from '../database/db';
+import { EncryptionService } from './encryption.service';
 
-const DOCUMENTS_DIR = `${FileSystem.documentDirectory}documents/`;
+const DOCUMENTS_DIR = `${RNFS.DocumentDirectoryPath}/documents`;
 
 export class StorageService {
   static async init() {
-    const info = await FileSystem.getInfoAsync(DOCUMENTS_DIR);
-    if (!info.exists) {
-      await FileSystem.makeDirectoryAsync(DOCUMENTS_DIR, { intermediates: true });
+    const exists = await RNFS.exists(DOCUMENTS_DIR);
+    if (!exists) {
+      await RNFS.mkdir(DOCUMENTS_DIR);
     }
   }
 
@@ -19,12 +19,14 @@ export class StorageService {
     fileType: string
   ): Promise<void> {
     await this.init();
-    
+
     const fileName = `${Date.now()}.enc`;
-    const targetPath = `${DOCUMENTS_DIR}${fileName}`;
-    
+    const targetPath = `${DOCUMENTS_DIR}/${fileName}`;
+
+    // Encrypt and save to internal storage
     await EncryptionService.encryptFile(sourcePath, targetPath);
-    
+
+    // Save metadata to DB
     await dbService.addDocument({
       name,
       category,
@@ -32,9 +34,10 @@ export class StorageService {
       file_type: fileType,
     });
 
+    // Optionally delete the source file if it's a temporary one (like from camera)
     if (sourcePath.includes('cache') || sourcePath.includes('tmp')) {
       try {
-        await FileSystem.deleteAsync(sourcePath, { idempotent: true });
+        await RNFS.unlink(sourcePath);
       } catch (e) {
         console.warn('Failed to delete source file', e);
       }
@@ -42,17 +45,20 @@ export class StorageService {
   }
 
   static async viewDocument(doc: DocumentRecord): Promise<string> {
+    // Decrypt to a temporary file for viewing
     return await EncryptionService.decryptFile(doc.file_path);
   }
 
   static async deleteDocument(doc: DocumentRecord): Promise<void> {
+    // Delete from DB
     if (doc.id) {
       await dbService.deleteDocument(doc.id);
     }
-    
-    const info = await FileSystem.getInfoAsync(doc.file_path);
-    if (info.exists) {
-      await FileSystem.deleteAsync(doc.file_path, { idempotent: true });
+
+    // Delete encrypted file
+    const exists = await RNFS.exists(doc.file_path);
+    if (exists) {
+      await RNFS.unlink(doc.file_path);
     }
   }
 }

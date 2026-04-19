@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../hooks/useTheme';
-import { AuthService } from '../services/authService';
-import { useAuthStore, useAppStore } from '../store';
 import { Fingerprint, Lock } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
+import { AuthService } from '../services/auth.service';
+import { useAppStore, useAuthStore } from '../store';
 
 const LockScreen = () => {
   const navigation = useNavigation<any>();

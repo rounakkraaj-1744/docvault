@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator, SafeAreaView, Dimensions } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { ChevronLeft, Share2, Trash2 } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Pdf from 'react-native-pdf';
 import Share from 'react-native-share';
-import { useTheme } from '../hooks/useTheme';
-import { StorageService } from '../services/storageService';
-import { EncryptionService } from '../services/encryptionService';
 import { DocumentRecord } from '../database/db';
-import { Trash2, Share2, ChevronLeft, ZoomIn } from 'lucide-react-native';
+import { useTheme } from '../hooks/useTheme';
+import { EncryptionService } from '../services/encryption.service';
+import { StorageService } from '../services/storage.service';
 
 const ViewerScreen = () => {
   const route = useRoute<any>();
@@ -45,8 +45,8 @@ const ViewerScreen = () => {
       'Are you sure you want to permanently delete this document?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
+        {
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             await StorageService.deleteDocument(document);

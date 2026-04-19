@@ -1,41 +1,42 @@
-import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
-import * as Keychain from 'react-native-keychain';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 
-const PIN_SERVICE = 'docvault_pin_service';
-const rnBiometrics = new ReactNativeBiometrics();
+const PIN_KEY = 'docvault_pin';
 
 export class AuthService {
   static async checkHasPin(): Promise<boolean> {
-    const credentials = await Keychain.getGenericPassword({ service: PIN_SERVICE });
-    return !!credentials;
+    const pin = await SecureStore.getItemAsync(PIN_KEY);
+    return !!pin;
   }
 
   static async setPin(pin: string): Promise<void> {
-    await Keychain.setGenericPassword('vault_pin', pin, { service: PIN_SERVICE });
+    await SecureStore.setItemAsync(PIN_KEY, pin, {
+      keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+    });
   }
 
   static async verifyPin(pin: string): Promise<boolean> {
-    const credentials = await Keychain.getGenericPassword({ service: PIN_SERVICE });
-    return credentials && credentials.password === pin;
+    const storedPin = await SecureStore.getItemAsync(PIN_KEY);
+    return storedPin === pin;
   }
 
   static async isBiometricAvailable(): Promise<boolean> {
-    const { available } = await rnBiometrics.isSensorAvailable();
-    return available;
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+    return hasHardware && isEnrolled;
   }
 
   static async authenticateBiometric(): Promise<boolean> {
     try {
-      const { available, biometryType } = await rnBiometrics.isSensorAvailable();
-      
+      const available = await this.isBiometricAvailable();
       if (!available) return false;
 
-      const { success } = await rnBiometrics.simplePrompt({
-        promptMessage: `Unlock with ${biometryType === BiometryTypes.FaceID ? 'Face ID' : 'Fingerprint'}`,
-        cancelButtonText: 'Use PIN',
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock DocVault',
+        fallbackLabel: 'Use PIN',
       });
 
-      return success;
+      return result.success;
     } catch (error) {
       console.error('Biometric auth failed:', error);
       return false;

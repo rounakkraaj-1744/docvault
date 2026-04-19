@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Camera, Check, ChevronLeft, FileUp, Image as ImageIcon } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DocumentPicker from 'react-native-document-picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { useTheme } from '../hooks/useTheme';
-import { StorageService } from '../services/storageService';
 import { DOCUMENT_CATEGORIES } from '../constants/categories';
-import { FileUp, Camera, Image as ImageIcon, ChevronLeft, Check } from 'lucide-react-native';
+import { useTheme } from '../hooks/useTheme';
+import { StorageService } from '../services/storage.service';
 
 const UploadScreen = () => {
   const navigation = useNavigation<any>();
   const theme = useTheme();
-  
+
   const [docName, setDocName] = useState('');
   const [category, setCategory] = useState(DOCUMENT_CATEGORIES[10]); // Default to 'Other'
   const [tempFile, setTempFile] = useState<{ uri: string, type: string } | null>(null);
@@ -93,22 +93,22 @@ const UploadScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>Source</Text>
           <View style={styles.sourceRow}>
-            <TouchableOpacity 
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
+            <TouchableOpacity
+              style={[styles.sourceBtn, { backgroundColor: theme.surface }]}
               onPress={handlePickDocument}
             >
               <FileUp color={theme.primary} size={24} />
               <Text style={[styles.sourceText, { color: theme.text }]}>File</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
+            <TouchableOpacity
+              style={[styles.sourceBtn, { backgroundColor: theme.surface }]}
               onPress={handleCapture}
             >
               <Camera color={theme.primary} size={24} />
               <Text style={[styles.sourceText, { color: theme.text }]}>Camera</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
+            <TouchableOpacity
+              style={[styles.sourceBtn, { backgroundColor: theme.surface }]}
               onPress={handleImageLibrary}
             >
               <ImageIcon color={theme.primary} size={24} />
@@ -151,7 +151,7 @@ const UploadScreen = () => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
-            styles.saveBtn, 
+            styles.saveBtn,
             { backgroundColor: theme.primary },
             (!docName || !tempFile || isUploading) && { opacity: 0.5 }
           ]}

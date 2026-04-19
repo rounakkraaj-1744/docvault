@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../hooks/useTheme';
-import { AuthService } from '../services/authService';
-import { useAuthStore } from '../store';
 import { Shield } from 'lucide-react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
+import { AuthService } from '../services/auth.service';
+import { useAuthStore } from '../store';
 
 const SplashScreen = () => {
   const navigation = useNavigation<any>();
@@ -18,7 +18,7 @@ const SplashScreen = () => {
   const checkAuth = async () => {
     const hasPin = await AuthService.checkHasPin();
     setHasPin(hasPin);
-    
+
     // Simulate splash duration
     setTimeout(() => {
       navigation.replace('Lock');

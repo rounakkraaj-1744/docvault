@@ -1,8 +1,6 @@
-import SQLite, { SQLiteDatabase } from 'react-native-sqlite-storage';
+import * as SQLite from 'expo-sqlite';
 
-SQLite.enablePromise(true);
-
-const database_name = "DocVault.db";
+const DATABASE_NAME = 'DocVault.db';
 
 export interface DocumentRecord {
   id?: number;
@@ -15,24 +13,19 @@ export interface DocumentRecord {
 }
 
 class Database {
-  private _db: SQLiteDatabase | null = null;
+  private _db: SQLite.SQLiteDatabase | null = null;
 
   async getDB() {
     if (this._db) return this._db;
-    
-    this._db = await SQLite.openDatabase({
-      name: database_name,
-      location: 'default',
-    });
-    
+    this._db = await SQLite.openDatabaseAsync(DATABASE_NAME);
     await this.init();
     return this._db;
   }
 
   private async init() {
-    if (!this._db) return;
-    
-    await this._db.executeSql(`
+    const db = this._db;
+    if (!db) return;
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS documents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -47,42 +40,28 @@ class Database {
 
   async getAllDocuments(): Promise<DocumentRecord[]> {
     const db = await this.getDB();
-    const results = await db.executeSql('SELECT * FROM documents ORDER BY created_at DESC');
-    const documents: DocumentRecord[] = [];
-    
-    const len = results[0].rows.length;
-    for (let i = 0; i < len; i++) {
-      documents.push(results[0].rows.item(i));
-    }
-    
-    return documents;
+    return await db.getAllAsync<DocumentRecord>('SELECT * FROM documents ORDER BY created_at DESC');
   }
 
   async addDocument(doc: DocumentRecord) {
     const db = await this.getDB();
-    await db.executeSql(
+    await db.runAsync(
       'INSERT INTO documents (name, category, file_path, file_type) VALUES (?, ?, ?, ?)',
-      [doc.name, doc.category, doc.file_path, doc.file_type]
+      [doc.name || '', doc.category, doc.file_path, doc.file_type]
     );
   }
 
   async deleteDocument(id: number) {
     const db = await this.getDB();
-    await db.executeSql('DELETE FROM documents WHERE id = ?', [id]);
+    await db.runAsync('DELETE FROM documents WHERE id = ?', [id]);
   }
 
   async searchDocuments(query: string): Promise<DocumentRecord[]> {
     const db = await this.getDB();
-    const results = await db.executeSql(
+    return await db.getAllAsync<DocumentRecord>(
       'SELECT * FROM documents WHERE name LIKE ? OR category LIKE ? ORDER BY created_at DESC',
       [`%${query}%`, `%${query}%`]
     );
-    const documents: DocumentRecord[] = [];
-    const len = results[0].rows.length;
-    for (let i = 0; i < len; i++) {
-      documents.push(results[0].rows.item(i));
-    }
-    return documents;
   }
 }
 
