@@ -3,7 +3,7 @@ import { Fingerprint, Lock } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services/authService';
 import { useAppStore, useAuthStore } from '../store';
 
 const LockScreen = () => {

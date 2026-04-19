@@ -3,8 +3,9 @@ import { Shield } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services/authService';
 import { useAuthStore } from '../store';
+import * as SplashScreenLib from 'expo-splash-screen';
 
 const SplashScreen = () => {
   const navigation = useNavigation<any>();
@@ -16,13 +17,19 @@ const SplashScreen = () => {
   }, []);
 
   const checkAuth = async () => {
-    const hasPin = await AuthService.checkHasPin();
-    setHasPin(hasPin);
+    try {
+      const hasPin = await AuthService.checkHasPin();
+      setHasPin(hasPin);
+      
+      // Hide native splash screen
+      await SplashScreenLib.hideAsync();
 
-    // Simulate splash duration
-    setTimeout(() => {
+      // Navigate
       navigation.replace('Lock');
-    }, 1500);
+    } catch (e) {
+      console.error(e);
+      await SplashScreenLib.hideAsync();
+    }
   };
 
   return (
