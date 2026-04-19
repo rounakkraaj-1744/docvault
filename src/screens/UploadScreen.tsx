@@ -1,17 +1,17 @@
-import { useNavigation } from '@react-navigation/native';
-import { Camera, Check, ChevronLeft, FileUp, Image as ImageIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import DocumentPicker from 'react-native-document-picker';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { DOCUMENT_CATEGORIES } from '../constants/categories';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, SafeAreaView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../hooks/useTheme';
-import { StorageService } from '../services/storage.service';
+import { StorageService } from '../services/storageService';
+import { DOCUMENT_CATEGORIES } from '../constants/categories';
+import { FileUp, Camera, Image as ImageIcon, ChevronLeft, Check } from 'lucide-react-native';
 
 const UploadScreen = () => {
   const navigation = useNavigation<any>();
   const theme = useTheme();
-
+  
   const [docName, setDocName] = useState('');
   const [category, setCategory] = useState(DOCUMENT_CATEGORIES[10]); // Default to 'Other'
   const [tempFile, setTempFile] = useState<{ uri: string, type: string } | null>(null);
@@ -19,28 +19,45 @@ const UploadScreen = () => {
 
   const handlePickDocument = async () => {
     try {
-      const res = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
       });
-      setTempFile({ uri: res.uri, type: res.type || 'application/octet-stream' });
-      if (!docName) setDocName(res.name || '');
-    } catch (err) {
-      if (!DocumentPicker.isCancel(err)) {
-        console.error(err);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setTempFile({ uri: asset.uri, type: asset.mimeType || 'application/octet-stream' });
+        if (!docName) setDocName(asset.name || '');
       }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleCapture = async () => {
-    const result = await launchCamera({ mediaType: 'photo', quality: 0.8 });
-    if (result.assets && result.assets[0].uri) {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Camera access is required to take photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setTempFile({ uri: result.assets[0].uri, type: 'image/jpeg' });
     }
   };
 
   const handleImageLibrary = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
-    if (result.assets && result.assets[0].uri) {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setTempFile({ uri: result.assets[0].uri, type: 'image/jpeg' });
     }
   };
@@ -93,22 +110,22 @@ const UploadScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>Source</Text>
           <View style={styles.sourceRow}>
-            <TouchableOpacity
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]}
+            <TouchableOpacity 
+              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
               onPress={handlePickDocument}
             >
               <FileUp color={theme.primary} size={24} />
               <Text style={[styles.sourceText, { color: theme.text }]}>File</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]}
+            <TouchableOpacity 
+              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
               onPress={handleCapture}
             >
               <Camera color={theme.primary} size={24} />
               <Text style={[styles.sourceText, { color: theme.text }]}>Camera</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sourceBtn, { backgroundColor: theme.surface }]}
+            <TouchableOpacity 
+              style={[styles.sourceBtn, { backgroundColor: theme.surface }]} 
               onPress={handleImageLibrary}
             >
               <ImageIcon color={theme.primary} size={24} />
@@ -151,7 +168,7 @@ const UploadScreen = () => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
-            styles.saveBtn,
+            styles.saveBtn, 
             { backgroundColor: theme.primary },
             (!docName || !tempFile || isUploading) && { opacity: 0.5 }
           ]}
@@ -168,103 +185,24 @@ const UploadScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  content: {
-    padding: 20,
-  },
-  section: {
-    marginBottom: 25,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    height: 55,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-  },
-  sourceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sourceBtn: {
-    flex: 1,
-    marginHorizontal: 5,
-    height: 80,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 1,
-  },
-  sourceText: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  fileStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 15,
-    padding: 10,
-    borderRadius: 8,
-    justifyContent: 'center',
-  },
-  fileStatusText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -5,
-  },
-  categoryItem: {
-    width: '47%',
-    margin: '1.5%',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'flex-start',
-  },
-  categoryIconText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  footer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#00000000', // Set dynamically if needed
-  },
-  saveBtn: {
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  saveBtnText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
+  title: { fontSize: 20, fontWeight: '700' },
+  content: { padding: 20 },
+  section: { marginBottom: 25 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { height: 55, borderWidth: 1, borderRadius: 12, paddingHorizontal: 15, fontSize: 16 },
+  sourceRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  sourceBtn: { flex: 1, marginHorizontal: 5, height: 80, borderRadius: 12, justifyContent: 'center', alignItems: 'center', elevation: 1 },
+  sourceText: { marginTop: 8, fontSize: 12, fontWeight: '600' },
+  fileStatus: { flexDirection: 'row', alignItems: 'center', marginTop: 15, padding: 10, borderRadius: 8, justifyContent: 'center' },
+  fileStatusText: { marginLeft: 8, fontSize: 14, fontWeight: '600' },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
+  categoryItem: { width: '47%', margin: '1.5%', padding: 12, borderRadius: 10, borderWidth: 1, alignItems: 'flex-start' },
+  categoryIconText: { fontSize: 13, fontWeight: '500' },
+  footer: { padding: 20 },
+  saveBtn: { height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  saveBtnText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
 });
 
 export default UploadScreen;

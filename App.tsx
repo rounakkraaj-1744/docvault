@@ -13,11 +13,23 @@ import UploadScreen from './src/screens/UploadScreen';
 import ViewerScreen from './src/screens/ViewerScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 
+import * as SplashScreenLib from 'expo-splash-screen';
+
+// Prevent auto-hiding
+SplashScreenLib.preventAutoHideAsync();
+
 const Stack = createStackNavigator();
 
 export default function App() {
   const isDarkMode = useAppStore((state) => state.isDarkMode);
-  const isLocked = useAuthStore((state) => state.isLocked);
+  
+  useEffect(() => {
+    // Basic setup
+    const init = async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    };
+    init();
+  }, []);
 
   return (
     <NavigationContainer>
